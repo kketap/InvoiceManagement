@@ -1,23 +1,36 @@
 import {
-    BadgeDollarSign,
-    CircleAlert,
+    AlertTriangle,
+    CheckCircle2,
     Clock3,
-    Files,
+    ReceiptText,
 } from "lucide-react";
 
-import KpiCard
-    from "../shared/KpiCard";
+import type {
+    LucideIcon,
+} from "lucide-react";
 
 import type {
     InvoiceListItem,
+    PaymentStatus,
 } from "../../types/invoice";
 
 type Props = {
-    invoices: InvoiceListItem[];
+    invoices:
+    InvoiceListItem[];
+
+    selectedPaymentStatus?:
+    PaymentStatus;
+
+    onSelectPaymentStatus?: (
+        status:
+            PaymentStatus | null
+    ) => void;
 };
 
 export default function InvoiceStatsRow({
     invoices,
+    selectedPaymentStatus,
+    onSelectPaymentStatus,
 }: Props) {
     const total =
         invoices.length;
@@ -43,70 +56,299 @@ export default function InvoiceStatsRow({
                 "Overdue"
         ).length;
 
-    function percentage(
+    const getPercentage = (
         value: number
-    ) {
-        if (total === 0) {
-            return "0%";
+    ) => {
+        if (
+            total === 0
+        ) {
+            return 0;
         }
 
-        return `${(
-            (value / total) *
+        return Math.round(
+            (
+                value /
+                total
+            ) *
             100
-        ).toFixed(1)}%`;
-    }
+        );
+    };
 
     return (
         <section
             className="
-        grid
-        grid-cols-1
-        gap-3
-        sm:grid-cols-2
-        xl:grid-cols-4
-      "
+                grid
+                grid-cols-1
+                gap-4
+                sm:grid-cols-2
+                xl:grid-cols-4
+            "
         >
-            <KpiCard
+            <InvoiceStatCard
                 title="Total de facturas"
-                value={total}
-                description="Facturas activas"
-                footnote="Registros disponibles"
-                icon={Files}
-                tone="blue"
+                value={
+                    total
+                }
+                description="Facturas activas y consistentes."
+                icon={
+                    ReceiptText
+                }
+                onClick={
+                    onSelectPaymentStatus
+                        ? () =>
+                            onSelectPaymentStatus(
+                                null
+                            )
+                        : undefined
+                }
             />
 
-            <KpiCard
+            <InvoiceStatCard
                 title="Pagadas"
-                value={paid}
-                description="Con pago registrado"
-                footnote={`${percentage(
+                value={
                     paid
-                )} del total`}
-                icon={BadgeDollarSign}
-                tone="green"
+                }
+                description={
+                    `${getPercentage(
+                        paid
+                    )}% del total`
+                }
+                icon={
+                    CheckCircle2
+                }
+                selected={
+                    selectedPaymentStatus ===
+                    "Paid"
+                }
+                onClick={
+                    onSelectPaymentStatus
+                        ? () =>
+                            onSelectPaymentStatus(
+                                "Paid"
+                            )
+                        : undefined
+                }
             />
 
-            <KpiCard
+            <InvoiceStatCard
                 title="Pendientes"
-                value={pending}
-                description="Dentro de plazo"
-                footnote={`${percentage(
+                value={
                     pending
-                )} del total`}
-                icon={Clock3}
-                tone="amber"
+                }
+                description={
+                    `${getPercentage(
+                        pending
+                    )}% del total`
+                }
+                icon={
+                    Clock3
+                }
+                selected={
+                    selectedPaymentStatus ===
+                    "Pending"
+                }
+                onClick={
+                    onSelectPaymentStatus
+                        ? () =>
+                            onSelectPaymentStatus(
+                                "Pending"
+                            )
+                        : undefined
+                }
             />
 
-            <KpiCard
+            <InvoiceStatCard
                 title="Vencidas"
-                value={overdue}
-                description="Pago fuera de plazo"
-                footnote={`${percentage(
+                value={
                     overdue
-                )} del total`}
-                icon={CircleAlert}
-                tone="orange"
+                }
+                description={
+                    `${getPercentage(
+                        overdue
+                    )}% del total`
+                }
+                icon={
+                    AlertTriangle
+                }
+                selected={
+                    selectedPaymentStatus ===
+                    "Overdue"
+                }
+                onClick={
+                    onSelectPaymentStatus
+                        ? () =>
+                            onSelectPaymentStatus(
+                                "Overdue"
+                            )
+                        : undefined
+                }
             />
         </section>
+    );
+}
+
+type InvoiceStatCardProps = {
+    title: string;
+
+    value: number;
+
+    description: string;
+
+    icon: LucideIcon;
+
+    selected?: boolean;
+
+    onClick?: () => void;
+};
+
+function InvoiceStatCard({
+    title,
+    value,
+    description,
+    icon: Icon,
+    selected = false,
+    onClick,
+}: InvoiceStatCardProps) {
+    return (
+        <article
+            role={
+                onClick
+                    ? "button"
+                    : undefined
+            }
+            tabIndex={
+                onClick
+                    ? 0
+                    : undefined
+            }
+            onClick={
+                onClick
+            }
+            onKeyDown={(
+                event
+            ) => {
+                if (
+                    !onClick
+                ) {
+                    return;
+                }
+
+                if (
+                    event.key ===
+                    "Enter" ||
+                    event.key ===
+                    " "
+                ) {
+                    event.preventDefault();
+
+                    onClick();
+                }
+            }}
+            className={`
+                rounded-xl
+                border
+                bg-white
+                p-4
+                shadow-[0_1px_2px_rgba(15,23,42,0.03)]
+                transition-all
+                duration-200
+
+                ${selected
+                    ? `
+                            border-[#0f5f7a]
+                            ring-2
+                            ring-[#0f5f7a]/10
+                          `
+                    : `
+                            border-slate-200
+                          `
+                }
+
+                ${onClick
+                    ? `
+                            cursor-pointer
+                            hover:-translate-y-0.5
+                            hover:border-[#0f5f7a]/40
+                            hover:shadow-md
+                            focus:outline-none
+                            focus:ring-2
+                            focus:ring-[#0f5f7a]/20
+                          `
+                    : ""
+                }
+            `}
+        >
+            <div
+                className="
+                    flex
+                    items-start
+                    justify-between
+                    gap-4
+                "
+            >
+                <div>
+                    <p
+                        className="
+                            text-[10px]
+                            font-semibold
+                            uppercase
+                            tracking-wide
+                            text-slate-400
+                        "
+                    >
+                        {title}
+                    </p>
+
+                    <p
+                        className="
+                            mt-2
+                            text-2xl
+                            font-semibold
+                            tracking-tight
+                            text-slate-900
+                        "
+                    >
+                        {value}
+                    </p>
+
+                    <p
+                        className="
+                            mt-1
+                            text-xs
+                            text-slate-400
+                        "
+                    >
+                        {description}
+                    </p>
+                </div>
+
+                <div
+                    className={`
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+
+                        ${selected
+                            ? `
+                                    bg-[#0f5f7a]
+                                    text-white
+                                  `
+                            : `
+                                    bg-slate-50
+                                    text-[#0f5f7a]
+                                  `
+                        }
+                    `}
+                >
+                    <Icon
+                        size={18}
+                    />
+                </div>
+            </div>
+        </article>
     );
 }

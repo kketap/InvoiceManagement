@@ -27,11 +27,6 @@ import type {
 import InvoiceStatusTag
     from "./InvoiceStatusTag";
 
-type Props = {
-    invoices: InvoiceListItem[];
-    loading?: boolean;
-};
-
 function formatCurrency(
     value: number
 ) {
@@ -55,9 +50,25 @@ function formatDate(
     );
 }
 
+function dateTimestamp(
+    value: string
+) {
+    return new Date(
+        value
+    ).getTime();
+}
+
+type Props = {
+    invoices:
+    InvoiceListItem[];
+
+    loading?:
+    boolean;
+};
+
 export default function InvoiceTableCard({
     invoices,
-    loading,
+    loading = false,
 }: Props) {
     const navigate =
         useNavigate();
@@ -75,19 +86,21 @@ export default function InvoiceTableCard({
         useState(10);
 
     useEffect(() => {
-        setCurrentPage(1);
-    }, [invoices]);
+        setCurrentPage(
+            1
+        );
+    }, [
+        invoices,
+    ]);
 
     const columns:
         ColumnsType<InvoiceListItem> =
         [
             {
                 title: "N°",
-                dataIndex:
-                    "invoiceNumber",
-                key:
-                    "invoiceNumber",
-                width: 70,
+                dataIndex: "invoiceNumber",
+                key: "invoiceNumber",
+                width: 90,
 
                 sorter: (
                     a,
@@ -95,12 +108,34 @@ export default function InvoiceTableCard({
                 ) =>
                     a.invoiceNumber -
                     b.invoiceNumber,
+
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
             },
 
             {
                 title: "Cliente",
                 key: "customer",
-                width: 230,
+                minWidth: 190,
+
+                sorter: (
+                    a,
+                    b
+                ) =>
+                    a.customerName.localeCompare(
+                        b.customerName,
+                        "es",
+                        {
+                            sensitivity: "base",
+                        }
+                    ),
+
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
 
                 render: (
                     _,
@@ -135,11 +170,25 @@ export default function InvoiceTableCard({
 
             {
                 title: "Emisión",
-                dataIndex:
-                    "invoiceDate",
-                key:
-                    "invoiceDate",
-                width: 115,
+                dataIndex: "invoiceDate",
+                key: "invoiceDate",
+                width: 120,
+
+                sorter: (
+                    a,
+                    b
+                ) =>
+                    dateTimestamp(
+                        a.invoiceDate
+                    ) -
+                    dateTimestamp(
+                        b.invoiceDate
+                    ),
+
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
 
                 render: (
                     value: string
@@ -150,16 +199,26 @@ export default function InvoiceTableCard({
             },
 
             {
-                title:
-                    "Vencimiento",
+                title: "Vencimiento",
+                dataIndex: "paymentDueDate",
+                key: "paymentDueDate",
+                width: 130,
 
-                dataIndex:
-                    "paymentDueDate",
+                sorter: (
+                    a,
+                    b
+                ) =>
+                    dateTimestamp(
+                        a.paymentDueDate
+                    ) -
+                    dateTimestamp(
+                        b.paymentDueDate
+                    ),
 
-                key:
-                    "paymentDueDate",
-
-                width: 120,
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
 
                 render: (
                     value: string
@@ -171,47 +230,49 @@ export default function InvoiceTableCard({
 
             {
                 title: "Total",
-
-                dataIndex:
-                    "totalAmount",
-
-                key:
-                    "totalAmount",
-
+                dataIndex: "totalAmount",
+                key: "totalAmount",
+                width: 130,
                 align: "right",
 
-                width: 125,
+                sorter: (
+                    a,
+                    b
+                ) =>
+                    a.totalAmount -
+                    b.totalAmount,
+
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
 
                 render: (
                     value: number
-                ) => (
-                    <span
-                        className="
-                            font-medium
-                            text-slate-800
-                        "
-                    >
-                        {
-                            formatCurrency(
-                                value
-                            )
-                        }
-                    </span>
-                ),
+                ) =>
+                    formatCurrency(
+                        value
+                    ),
             },
 
             {
                 title: "Saldo",
-
-                dataIndex:
-                    "pendingAmount",
-
-                key:
-                    "pendingAmount",
-
+                dataIndex: "pendingAmount",
+                key: "pendingAmount",
+                width: 130,
                 align: "right",
 
-                width: 125,
+                sorter: (
+                    a,
+                    b
+                ) =>
+                    a.pendingAmount -
+                    b.pendingAmount,
+
+                sortDirections: [
+                    "ascend",
+                    "descend",
+                ],
 
                 render: (
                     value: number
@@ -223,13 +284,8 @@ export default function InvoiceTableCard({
 
             {
                 title: "Estado",
-
-                dataIndex:
-                    "invoiceStatus",
-
-                key:
-                    "invoiceStatus",
-
+                dataIndex: "invoiceStatus",
+                key: "invoiceStatus",
                 width: 110,
 
                 render: (
@@ -246,13 +302,8 @@ export default function InvoiceTableCard({
 
             {
                 title: "Pago",
-
-                dataIndex:
-                    "paymentStatus",
-
-                key:
-                    "paymentStatus",
-
+                dataIndex: "paymentStatus",
+                key: "paymentStatus",
                 width: 110,
 
                 render: (
@@ -269,11 +320,8 @@ export default function InvoiceTableCard({
 
             {
                 title: "",
-
                 key: "actions",
-
                 width: 60,
-
                 fixed: "right",
 
                 render: (
@@ -299,7 +347,7 @@ export default function InvoiceTableCard({
         ];
 
     return (
-        <div
+        <section
             className="
                 overflow-hidden
                 rounded-xl
@@ -311,74 +359,50 @@ export default function InvoiceTableCard({
         >
             <div
                 className="
-                    flex
-                    items-center
-                    justify-between
                     border-b
                     border-slate-100
                     px-5
                     py-4
                 "
             >
-                <div>
-                    <h2
-                        className="
-                            text-sm
-                            font-semibold
-                            text-slate-900
-                        "
-                    >
-                        Facturas
-                    </h2>
-
-                    <p
-                        className="
-                            mt-1
-                            text-xs
-                            text-slate-400
-                        "
-                    >
-                        Consulta y revisa
-                        el estado actual
-                        de las facturas.
-                    </p>
-                </div>
-
-                <span
+                <h2
                     className="
-                        rounded-md
-                        bg-slate-100
-                        px-2
-                        py-1
-                        text-[10px]
-                        font-medium
-                        text-slate-500
+                        text-sm
+                        font-semibold
+                        text-slate-900
                     "
                 >
-                    {invoices.length}
-                    {" "}
-                    registros
-                </span>
+                    Facturas
+                </h2>
+
+                <p
+                    className="
+                        mt-1
+                        text-xs
+                        text-slate-400
+                    "
+                >
+                    Listado de facturas activas y consistentes.
+                </p>
             </div>
 
             <Table
                 rowKey="id"
                 size="small"
+                loading={
+                    loading
+                }
                 columns={
                     columns
                 }
                 dataSource={
                     invoices
                 }
-                loading={
-                    loading
-                }
                 pagination={{
                     current:
                         currentPage,
 
-                    pageSize:
-                        pageSize,
+                    pageSize,
 
                     total:
                         invoices.length,
@@ -430,9 +454,9 @@ export default function InvoiceTableCard({
                     ],
                 }}
                 scroll={{
-                    x: 1180,
+                    x: 1120,
                 }}
             />
-        </div>
+        </section>
     );
 }

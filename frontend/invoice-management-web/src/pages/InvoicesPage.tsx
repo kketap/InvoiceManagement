@@ -32,6 +32,7 @@ import InvoiceTableCard
 import type {
     InvoiceFilters,
     InvoiceListItem,
+    PaymentStatus,
 } from "../types/invoice";
 
 export default function InvoicesPage() {
@@ -39,17 +40,17 @@ export default function InvoicesPage() {
         allInvoices,
         setAllInvoices,
     ] =
-        useState<InvoiceListItem[]>(
-            []
-        );
+        useState<
+            InvoiceListItem[]
+        >([]);
 
     const [
         invoices,
         setInvoices,
     ] =
-        useState<InvoiceListItem[]>(
-            []
-        );
+        useState<
+            InvoiceListItem[]
+        >([]);
 
     const [
         filters,
@@ -83,8 +84,13 @@ export default function InvoicesPage() {
         useCallback(
             async () => {
                 try {
-                    setLoading(true);
-                    setError(null);
+                    setLoading(
+                        true
+                    );
+
+                    setError(
+                        null
+                    );
 
                     const data =
                         await getInvoices();
@@ -131,6 +137,22 @@ export default function InvoicesPage() {
                         null
                     );
 
+                    if (
+                        Object.keys(
+                            currentFilters
+                        ).length ===
+                        0
+                    ) {
+                        const data =
+                            await getInvoices();
+
+                        setInvoices(
+                            data
+                        );
+
+                        return;
+                    }
+
                     const data =
                         await getInvoices(
                             currentFilters
@@ -161,20 +183,11 @@ export default function InvoicesPage() {
 
     useEffect(() => {
         loadAllInvoices();
-    }, [loadAllInvoices]);
+    }, [
+        loadAllInvoices,
+    ]);
 
     function handleSearch() {
-        if (
-            Object.keys(filters)
-                .length === 0
-        ) {
-            setInvoices(
-                allInvoices
-            );
-
-            return;
-        }
-
         loadFilteredInvoices(
             filters
         );
@@ -190,10 +203,86 @@ export default function InvoicesPage() {
         );
     }
 
+    async function handlePaymentStatusCardClick(
+        status:
+            PaymentStatus | null
+    ) {
+        /*
+         * null representa la card TOTAL.
+         */
+        if (
+            status ===
+            null
+        ) {
+            setFilters(
+                {}
+            );
+
+            setInvoices(
+                allInvoices
+            );
+
+            return;
+        }
+
+        /*
+         * Si presionamos la misma card activa,
+         * eliminamos solamente el filtro
+         * de estado de pago.
+         */
+        if (
+            filters.paymentStatus ===
+            status
+        ) {
+            const nextFilters = {
+                ...filters,
+            };
+
+            delete nextFilters
+                .paymentStatus;
+
+            setFilters(
+                nextFilters
+            );
+
+            await loadFilteredInvoices(
+                nextFilters
+            );
+
+            return;
+        }
+
+        /*
+         * Conservamos cualquier otro filtro
+         * que ya esté aplicado y reemplazamos
+         * solamente paymentStatus.
+         */
+        const nextFilters:
+            InvoiceFilters =
+        {
+            ...filters,
+            paymentStatus:
+                status,
+        };
+
+        setFilters(
+            nextFilters
+        );
+
+        await loadFilteredInvoices(
+            nextFilters
+        );
+    }
+
     async function handleRefresh() {
         try {
-            setLoading(true);
-            setError(null);
+            setLoading(
+                true
+            );
+
+            setError(
+                null
+            );
 
             const globalData =
                 await getInvoices();
@@ -202,12 +291,12 @@ export default function InvoicesPage() {
                 globalData
             );
 
-            const hasFilters =
+            if (
                 Object.keys(
                     filters
-                ).length > 0;
-
-            if (hasFilters) {
+                ).length >
+                0
+            ) {
                 const filteredData =
                     await getInvoices(
                         filters
@@ -244,31 +333,33 @@ export default function InvoicesPage() {
     }
 
     const hasFilters =
-        Object.keys(filters)
-            .length > 0;
+        Object.keys(
+            filters
+        ).length >
+        0;
 
     return (
         <div
             className="
-        min-h-screen
-        bg-[#f8fafc]
-      "
+                min-h-screen
+                bg-[#f8fafc]
+            "
         >
             <main
                 className="
-          mx-auto
-          w-full
-          max-w-[1600px]
-          px-4
-          py-7
-          sm:px-6
-          lg:px-8
-        "
+                    mx-auto
+                    w-full
+                    max-w-[1600px]
+                    px-4
+                    py-7
+                    sm:px-6
+                    lg:px-8
+                "
             >
                 <div
                     className="
-            space-y-6
-          "
+                        space-y-6
+                    "
                 >
                     <InvoiceHeader
                         onRefresh={
@@ -288,7 +379,7 @@ export default function InvoicesPage() {
                         <Alert
                             type="error"
                             showIcon
-                            message="No fue posible cargar las facturas"
+                            title="No fue posible cargar las facturas"
                             description={
                                 error
                             }
@@ -300,32 +391,32 @@ export default function InvoicesPage() {
                         0 ? (
                         <div
                             className="
-                flex
-                min-h-80
-                items-center
-                justify-center
-                rounded-xl
-                border
-                border-slate-200
-                bg-white
-              "
+                                flex
+                                min-h-80
+                                items-center
+                                justify-center
+                                rounded-xl
+                                border
+                                border-slate-200
+                                bg-white
+                            "
                         >
                             <Spin
                                 size="large"
-                                tip="Cargando facturas..."
+                                description="Cargando facturas..."
                             />
                         </div>
                     ) : allInvoices.length ===
                         0 ? (
                         <div
                             className="
-                rounded-xl
-                border
-                border-slate-200
-                bg-white
-                px-6
-                py-16
-              "
+                                rounded-xl
+                                border
+                                border-slate-200
+                                bg-white
+                                px-6
+                                py-16
+                            "
                         >
                             <Empty
                                 description="No hay facturas disponibles."
@@ -336,6 +427,12 @@ export default function InvoicesPage() {
                             <InvoiceStatsRow
                                 invoices={
                                     allInvoices
+                                }
+                                selectedPaymentStatus={
+                                    filters.paymentStatus
+                                }
+                                onSelectPaymentStatus={
+                                    handlePaymentStatusCardClick
                                 }
                             />
 
@@ -371,15 +468,15 @@ export default function InvoicesPage() {
                             ) : (
                                 <div
                                     className="
-            flex
-            min-h-[360px]
-            items-center
-            justify-center
-            rounded-xl
-            border
-            border-slate-200
-            bg-white
-        "
+                                        flex
+                                        min-h-[360px]
+                                        items-center
+                                        justify-center
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-white
+                                    "
                                 >
                                     <Empty
                                         description="No existen facturas que coincidan con los filtros."
@@ -403,7 +500,6 @@ export default function InvoicesPage() {
                                     handleCreditNoteCreated
                                 }
                             />
-
                         </>
                     )}
                 </div>

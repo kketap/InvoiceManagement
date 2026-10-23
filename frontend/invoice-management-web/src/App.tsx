@@ -13,6 +13,15 @@ import InvoicesPage
 import InvoiceDetailPage
   from "./pages/InvoiceDetailPage";
 
+import ReportsPage
+  from "./pages/ReportsPage";
+
+import ImportPage
+  from "./pages/ImportPage";
+
+import DashboardPage
+  from "./pages/DashboardPage";
+
 function PlaceholderPage({
   title,
 }: {
@@ -71,7 +80,7 @@ export default function App() {
           path="/"
           element={
             <Navigate
-              to="/invoices"
+              to="/dashboard"
               replace
             />
           }
@@ -96,9 +105,7 @@ export default function App() {
         <Route
           path="/reports"
           element={
-            <PlaceholderPage
-              title="Reportes"
-            />
+            <ReportsPage />
           }
         />
 
@@ -128,11 +135,25 @@ export default function App() {
             />
           }
         />
-        
+
         <Route
           path="/invoices/:id"
           element={
             <InvoiceDetailPage />
+          }
+        />
+
+        <Route
+          path="/import"
+          element={
+            <ImportPage />
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage />
           }
         />
       </Routes>
