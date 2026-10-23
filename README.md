@@ -607,6 +607,12 @@ Verificar:
 dotnet ef --version
 ```
 
+Instalar certificado de desarrollo HTTPS, para evitar visualizar errores de privacidad en el navegador 
+
+```bash
+dotnet dev-certs https --trust
+```
+
 ---
 
 # Instalación
