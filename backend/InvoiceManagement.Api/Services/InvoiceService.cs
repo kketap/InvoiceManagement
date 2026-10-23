@@ -2,11 +2,10 @@ using InvoiceManagement.Api.Data;
 using InvoiceManagement.Api.Domain.Enums;
 using InvoiceManagement.Api.Domain.Rules;
 using InvoiceManagement.Api.DTOs.Invoices;
+using InvoiceManagement.Api.Exceptions;
 using InvoiceManagement.Api.Services.Interfaces;
 
 using Microsoft.EntityFrameworkCore;
-
-using InvoiceManagement.Api.Exceptions;
 
 namespace InvoiceManagement.Api.Services;
 
@@ -21,42 +20,64 @@ public class InvoiceService : IInvoiceService
     }
 
     public async Task<List<InvoiceListDto>> GetAllAsync(
-        InvoiceFilterDto filters)
+    InvoiceFilterDto filters)
     {
-        var query =
-            _context.Invoices
+        var searchQuery =
+            _context.InvoiceSearch
                 .AsNoTracking()
-                .Include(x => x.Customer)
-                .Include(x => x.CreditNotes)
-                .Include(x => x.Payment)
                 .Where(x => x.IsConsistent)
                 .AsQueryable();
 
         if (filters.InvoiceNumber.HasValue)
         {
-            query = query.Where(
-                x =>
-                    x.InvoiceNumber ==
-                    filters.InvoiceNumber.Value);
+            searchQuery =
+                searchQuery.Where(
+                    x =>
+                        x.InvoiceNumber ==
+                        filters.InvoiceNumber.Value
+                );
         }
 
         if (!string.IsNullOrWhiteSpace(
-                filters.InvoiceStatus))
+         filters.InvoiceStatus))
         {
-            if (Enum.TryParse<InvoiceStatus>(
+            if (!TryParseEnumName<InvoiceStatus>(
                     filters.InvoiceStatus,
-                    true,
                     out var invoiceStatus))
             {
-                query = query.Where(
+                var allowedValues =
+                    string.Join(
+                        ", ",
+                        Enum.GetNames<InvoiceStatus>()
+                    );
+
+                throw new RequestValidationException(
+                    $"InvoiceStatus inválido. " +
+                    $"Valores permitidos: {allowedValues}."
+                );
+            }
+
+            searchQuery =
+                searchQuery.Where(
                     x =>
                         x.InvoiceStatus ==
-                        invoiceStatus);
-            }
+                        invoiceStatus.ToString()
+                );
         }
 
+        var matchingIds =
+            await searchQuery
+                .Select(x => x.Id)
+                .ToListAsync();
+
         var invoices =
-            await query
+            await _context.Invoices
+                .AsNoTracking()
+                .Include(x => x.Customer)
+                .Include(x => x.CreditNotes)
+                .Include(x => x.Payment)
+                .Where(x =>
+                    matchingIds.Contains(x.Id))
                 .OrderBy(x => x.InvoiceNumber)
                 .ToListAsync();
 
@@ -78,7 +99,8 @@ public class InvoiceService : IInvoiceService
 
                 return new InvoiceListDto
                 {
-                    Id = invoice.Id,
+                    Id =
+                        invoice.Id,
 
                     InvoiceNumber =
                         invoice.InvoiceNumber,
@@ -111,20 +133,39 @@ public class InvoiceService : IInvoiceService
             .ToList();
 
         if (!string.IsNullOrWhiteSpace(
-                filters.PaymentStatus))
+         filters.PaymentStatus))
         {
-            result = result
-                .Where(x =>
-                    x.PaymentStatus.Equals(
-                        filters.PaymentStatus,
-                        StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            if (!TryParseEnumName<PaymentStatus>(
+                    filters.PaymentStatus,
+                    out var paymentStatusFilter))
+            {
+                var allowedValues =
+                    string.Join(
+                        ", ",
+                        Enum.GetNames<PaymentStatus>()
+                    );
+
+                throw new RequestValidationException(
+                    $"PaymentStatus inválido. " +
+                    $"Valores permitidos: {allowedValues}."
+                );
+            }
+
+            result =
+                result
+                    .Where(x =>
+                        x.PaymentStatus.Equals(
+                            paymentStatusFilter.ToString(),
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    .ToList();
         }
 
         return result;
     }
 
-    public async Task<InvoiceDetailResponseDto?> GetByIdAsync(
+    public async Task<InvoiceDetailResponseDto> GetByIdAsync(
     int id)
     {
         var invoice =
@@ -269,5 +310,31 @@ public class InvoiceService : IInvoiceService
                         })
                     .ToList()
         };
+    }
+
+    private static bool TryParseEnumName<TEnum>(
+    string value,
+    out TEnum result)
+    where TEnum : struct, Enum
+    {
+        result = default;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (int.TryParse(value, out _))
+        {
+            return false;
+        }
+
+        return Enum.TryParse<TEnum>(
+            value,
+            true,
+            out result
+        )
+        &&
+        Enum.IsDefined(result);
     }
 }
