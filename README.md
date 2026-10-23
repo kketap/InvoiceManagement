@@ -186,9 +186,7 @@ POST /api/import/invoices
 
 También puede ejecutarse desde el módulo:
 
-Importar datos
-
-del frontend.
+Importar datos del frontend.
 
 Durante la importación se realizan las siguientes validaciones:
 
@@ -1137,13 +1135,13 @@ Los reportes pueden utilizar un universo distinto cuando corresponde, incluyendo
 
 ---
 
-# Utenticación de usuarios
+# Autenticación de usuarios
 
 La autenticación fue considerada opcional y no fue incluida en esta implementación.
 
 ---
 
-# Estado del proyecto
+# Estado final del proyecto
 
 Las funcionalidades requeridas se encuentran implementadas:
 
@@ -1172,5 +1170,3 @@ Las funcionalidades requeridas se encuentran implementadas:
 - [x] Tablas con ordenamiento y paginación.
 - [x] Diseño responsive.
 - [x] Navegación adaptable a móvil y escritorio.
-
----
